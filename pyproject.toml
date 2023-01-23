@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diamond4py"
-version = "0.0.1rc1"
+version = "0.0.2rc1"
 authors = [
   { name="Zhang.H.N", email="zhang.h.n@foxmail.com" },
 ]
