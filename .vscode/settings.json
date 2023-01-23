@@ -60,7 +60,7 @@
         "typeinfo": "cpp"
     },
     "cmake.configureSettings": {
-        "CMAKE_MODULE_PATH": "/home/hongning/miniconda3/envs/annopro/lib/python3.8/site-packages/skbuild/resources/cmake",
-        "CMAKE_CXX_COMPILER": "/home/hongning/miniconda3/envs/annopro/bin/x86_64-conda_cos6-linux-gnu-g++",
+        "CMAKE_MODULE_PATH": "${userHome}/miniconda3/envs/diamondpy/lib/python3.8/site-packages/skbuild/resources/cmake",
+        "CMAKE_CXX_COMPILER": "${userHome}/miniconda3/envs/diamondpy/bin/x86_64-conda_cos6-linux-gnu-g++",
     }
 }
