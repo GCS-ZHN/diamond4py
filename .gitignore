@@ -65,3 +65,5 @@ _skbuild
 dist
 *.dmnd
 *output
+build/
+*.pyd
