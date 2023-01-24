@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diamond4py"
-version = "0.0.2rc1"
+version = "0.0.2rc2"
 authors = [
   { name="Zhang.H.N", email="zhang.h.n@foxmail.com" },
 ]
@@ -18,10 +18,10 @@ readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GPLv3 License",
     "Operating System :: OS Independent",
 ]
-license = {file = "LICENSE"}
+license = {text = "GPLv3"}
 
 [project.urls]
 "Homepage" = "https://github.com/GCS-ZHN/diamond4py"
