@@ -4,12 +4,12 @@ requires = [
     "scikit-build>=0.13",
     "cmake>=3.18",
     "ninja",
+    "versioneer[toml]==0.26"
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "diamond4py"
-version = "0.0.2rc2"
 authors = [
   { name="Zhang.H.N", email="zhang.h.n@foxmail.com" },
 ]
@@ -23,7 +23,16 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics"
 ]
 license = {text = "GPLv3"}
+dynamic = ["version"]
 
 [project.urls]
 "Homepage" = "https://github.com/GCS-ZHN/diamond4py"
 "Bug Tracker" = "https://github.com/GCS-ZHN/diamond4py/issues"
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "diamond4py/_version.py"
+versionfile_build = "diamond4py/_version.py"
+tag_prefix = "v"
+parentdir_prefix = "diamond4py-"

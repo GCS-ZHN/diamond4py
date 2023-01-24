@@ -163,3 +163,6 @@ class Diamond(object):
     def version(self) -> str:
         """Version of diamond"""
         return version()
+
+from . import _version
+__version__ = _version.get_versions()['version']
