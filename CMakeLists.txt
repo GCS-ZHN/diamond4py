@@ -3,7 +3,6 @@ project (DIAMOND4PY)
 
 include(CheckCXXCompilerFlag)
 
-find_package(PythonExtensions REQUIRED)
 option(BUILD_STATIC "BUILD_STATIC" OFF)
 option(EXTRA "EXTRA" OFF)
 option(STATIC_LIBGCC "STATIC_LIBGCC" OFF)
@@ -115,13 +114,13 @@ if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5)
 endif()
 
 set(DISPATCH_OBJECTS
-"src/dp/swipe/banded_3frame_swipe.cpp"
-"src/search/stage2.cpp"
-"src/tools/benchmark.cpp"
-"src/dp/swipe/swipe_wrapper.cpp"
-"src/util/tantan.cpp"
-"src/dp/scan_diags.cpp"
-"src/dp/ungapped_simd.cpp"
+  "src/dp/swipe/banded_3frame_swipe.cpp"
+  "src/search/stage2.cpp"
+  "src/tools/benchmark.cpp"
+  "src/dp/swipe/swipe_wrapper.cpp"
+  "src/util/tantan.cpp"
+  "src/dp/scan_diags.cpp"
+  "src/dp/ungapped_simd.cpp"
 )
 
 if(EXTRA)
@@ -130,19 +129,24 @@ endif()
 
 add_library(arch_generic OBJECT ${DISPATCH_OBJECTS})
 target_compile_options(arch_generic PUBLIC -DDISPATCH_ARCH=ARCH_GENERIC -DARCH_ID=0 -DEigen=Eigen_GENERIC)
-target_include_directories(arch_generic PRIVATE "${CMAKE_SOURCE_DIR}/src/lib")
-if(X86)
-add_library(arch_sse4_1 OBJECT ${DISPATCH_OBJECTS})
-target_include_directories(arch_sse4_1 PRIVATE "${CMAKE_SOURCE_DIR}/src/lib")
-add_library(arch_avx2 OBJECT ${DISPATCH_OBJECTS})
-target_include_directories(arch_avx2 PRIVATE "${CMAKE_SOURCE_DIR}/src/lib")
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-	target_compile_options(arch_sse4_1 PUBLIC -DDISPATCH_ARCH=ARCH_SSE4_1 -DARCH_ID=1 -D__SSSE3__ -D__SSE4_1__ -D__POPCNT__ -DEigen=Eigen_SSE4_1)
-    target_compile_options(arch_avx2 PUBLIC -DDISPATCH_ARCH=ARCH_AVX2 -DARCH_ID=2 /arch:AVX2 -D__SSSE3__ -D__SSE4_1__ -D__POPCNT__ -DEigen=Eigen_AVX2)
-else()
-	target_compile_options(arch_sse4_1 PUBLIC -DDISPATCH_ARCH=ARCH_SSE4_1 -DARCH_ID=1 -mssse3 -mpopcnt -msse4.1 -DEigen=Eigen_SSE4_1)
-    target_compile_options(arch_avx2 PUBLIC -DDISPATCH_ARCH=ARCH_AVX2 -DARCH_ID=2 -mssse3 -mpopcnt -msse4.1 -msse4.2 -mavx -mavx2 -DEigen=Eigen_AVX2)
+if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+  target_compile_options(arch_generic PUBLIC -fPIC)
 endif()
+target_include_directories(arch_generic PRIVATE "${CMAKE_SOURCE_DIR}/src/lib")
+
+# libs for accelerate computation on x86
+if(X86)
+  add_library(arch_sse4_1 OBJECT ${DISPATCH_OBJECTS})
+  target_include_directories(arch_sse4_1 PRIVATE "${CMAKE_SOURCE_DIR}/src/lib")
+  add_library(arch_avx2 OBJECT ${DISPATCH_OBJECTS})
+  target_include_directories(arch_avx2 PRIVATE "${CMAKE_SOURCE_DIR}/src/lib")
+  if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+    target_compile_options(arch_sse4_1 PUBLIC -DDISPATCH_ARCH=ARCH_SSE4_1 -DARCH_ID=1 -D__SSSE3__ -D__SSE4_1__ -D__POPCNT__ -DEigen=Eigen_SSE4_1)
+      target_compile_options(arch_avx2 PUBLIC -DDISPATCH_ARCH=ARCH_AVX2 -DARCH_ID=2 /arch:AVX2 -D__SSSE3__ -D__SSE4_1__ -D__POPCNT__ -DEigen=Eigen_AVX2)
+  else()
+    target_compile_options(arch_sse4_1 PUBLIC -DDISPATCH_ARCH=ARCH_SSE4_1 -DARCH_ID=1 -mssse3 -mpopcnt -msse4.1 -DEigen=Eigen_SSE4_1 -fPIC)
+      target_compile_options(arch_avx2 PUBLIC -DDISPATCH_ARCH=ARCH_AVX2 -DARCH_ID=2 -mssse3 -mpopcnt -msse4.1 -msse4.2 -mavx -mavx2 -DEigen=Eigen_AVX2 -fPIC)
+  endif()
 endif(X86)
 
 set(OBJECTS
@@ -374,6 +378,8 @@ endif()
 
 target_link_libraries(libdiamond ${ZLIB_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
+# compile by scikit-build
+find_package(PythonExtensions REQUIRED)
 python_extension_module(libdiamond)
 install(TARGETS libdiamond LIBRARY DESTINATION diamond4py)
 install(TARGETS arch_sse4_1 LIBRARY DESTINATION diamond4py)
