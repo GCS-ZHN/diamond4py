@@ -9,15 +9,17 @@ static PyObject* method_main(PyObject* self, PyObject* args)
     try {
         int size = PyTuple_Size(args);
         int argc = size + 1;
-        const char* argv[argc];
+        const char** argv = new const char*[argc];
         argv[0] = "diamond";
         for (int i = 0; i < size; i++) {
             PyObject* item = PyTuple_GetItem(args, i);
             if (!PyArg_Parse(item, "s", &(argv[i + 1]))) {
+                delete[] argv;
                 return NULL;
             }
         }
         int status = diamond(argc, argv);
+        delete[] argv;
         return Py_BuildValue("i", status);
 	}
 	catch(const std::bad_alloc &e) {
