@@ -1,5 +1,5 @@
 # diamond4py
-This is python binding for diamond--a sequence alignment BLAST software implements in C++.
+This is python binding for [diamond](https://github.com/bbuchfink/diamond)--a sequence alignment BLAST software implements in C++.
 
 ## install
 
