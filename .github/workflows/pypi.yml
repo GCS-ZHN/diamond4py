@@ -36,7 +36,10 @@ jobs:
         run: "python -m build"
 
       - name: "Test install"
-        run: pip install dist/diamond4py*whl && python -c "import diamond4py"
+        run: pip install dist/diamond4py*whl
+        
+      - name: "Test case"
+        run: pushd test; python test.py; popd
 
       - uses: actions/upload-artifact@v3
         with:
