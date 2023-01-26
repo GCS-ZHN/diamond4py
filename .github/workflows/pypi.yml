@@ -11,41 +11,54 @@ permissions:
   contents: write
 
 jobs:
-  linux-build:
-    runs-on: ubuntu-18.04
+  build:
+    runs-on: ${{ matrix.os }}
     strategy: 
       matrix:
         py_version: ['3.7', '3.8', '3.9', '3.10']
+        os: ['ubuntu-18.04', 'macos-latest', 'windows-latest']
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: "Setup Python"
-        uses: actions/setup-python@v4
+      - name: "Setup Miniconda"
+        uses: conda-incubator/setup-miniconda@v2
         with:
            python-version: ${{ matrix.py_version }}
-           architecture: "x64"
-      
-      - name: "Which python"
-        run: "which python && which pip"
+           auto-update-conda: true
+           activate-environment: "diamond4py"
 
-      - name: "Setup build"
-        run: "pip install build auditwheel==5.0.0"
+      - name: Setup MSBuild.exe
+        if: startsWith(matrix.os, 'windows')
+        uses: microsoft/setup-msbuild@v1.1
 
-      - name: "Install zlib"
-        run : "sudo apt install zlib1g-dev -y"
+      - name: "Build and test for Linux"
+        if: startsWith(matrix.os, 'windows')==false
+        shell: bash -el {0}
+        run: |
+          pip install --upgrade pip &&
+          pip install build &&
+          conda install -c anaconda zlib &&
+          python -m build &&
+          pip install dist/diamond4py*whl &&
+          pushd test; python test.py; popd
 
-      - name: "Build diamond4py"
-        run: "python -m build"
-
-      - name: "Test install"
-        run: pip install dist/diamond4py*whl
-        
-      - name: "Test case"
-        run: pushd test; python test.py; popd
+      - name: "Build and test for Windows"
+        if: startsWith(matrix.os, 'windows')
+        shell: powershell
+        run: |
+          pip install --upgrade pip;
+          pip install build ;
+          conda install -c anaconda zlib ;
+          python -m build ;
+          Get-ChildItem -Path dist -Filter diamond4py*whl | ForEach-Object{ pip install "dist\$_" };
+          pushd test; python test.py; popd
 
       - name: "Repair manylinux"
+        shell: bash -el {0}
+        if: startsWith(matrix.os, 'ubuntu')
         run: |
+          pip install auditwheel==5.0.0 &&
           auditwheel show dist/*-linux*whl && 
           auditwheel repair dist/*-linux*whl --plat manylinux_2_27_x86_64 -w dist &&
           rm dist/*-linux*whl
@@ -65,7 +78,7 @@ jobs:
           retention-days: 1
 
   release:
-    needs: ["linux-build"]
+    needs: ["build"]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v3
