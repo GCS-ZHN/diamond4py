@@ -1,4 +1,8 @@
 # diamond4py
+[![pypi](https://github.com/GCS-ZHN/diamond4py/actions/workflows/pypi.yml/badge.svg)](https://pypi.org/project/diamond4py/)
+![license](https://img.shields.io/badge/license-GPLv3-blue.svg)
+![python](https://img.shields.io/badge/python->=3.7-success.svg)
+
 This is python binding for [diamond](https://github.com/bbuchfink/diamond)--a sequence alignment BLAST software implements in C++.
 
 ## install
