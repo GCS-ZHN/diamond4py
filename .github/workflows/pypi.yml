@@ -7,6 +7,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   linux-build:
     runs-on: ubuntu-18.04
@@ -27,7 +30,7 @@ jobs:
         run: "which python && which pip"
 
       - name: "Setup build"
-        run: "pip install build"
+        run: "pip install build auditwheel==5.0.0"
 
       - name: "Install zlib"
         run : "sudo apt install zlib1g-dev -y"
@@ -41,10 +44,25 @@ jobs:
       - name: "Test case"
         run: pushd test; python test.py; popd
 
+      - name: "Repair manylinux"
+        run: |
+          auditwheel show dist/*-linux*whl && 
+          auditwheel repair dist/*-linux*whl --plat manylinux_2_27_x86_64 -w dist &&
+          rm dist/*-linux*whl
+
+      - name: Get version
+        id: version
+        uses: frabert/replace-string-action@v2
+        with:
+          pattern: 'refs/tags/v(.+)'
+          string: ${{ github.ref }}
+          replace-with: 'v$1'
+
       - uses: actions/upload-artifact@v3
         with:
-          name: build_package
+          name: build_${{ steps.version.outputs.replaced }}
           path: dist/*
+          retention-days: 1
 
   release:
     needs: ["linux-build"]
@@ -52,9 +70,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Get version
+        id: version
+        uses: frabert/replace-string-action@v2
+        with:
+          pattern: 'refs/tags/v(.+)'
+          string: ${{ github.ref }}
+          replace-with: 'v$1'
+
       - uses: actions/download-artifact@v3
         with:
-          name: build_package
+          name: build_${{ steps.version.outputs.replaced }}
           path: dist/
 
       - name: Release to GitHub
