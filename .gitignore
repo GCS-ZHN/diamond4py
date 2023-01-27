@@ -56,3 +56,14 @@ src/extra/
 .vs/
 CMakeSettings.json
 .unison
+
+*.so
+__pycache__
+# python
+_skbuild
+*.egg-info
+dist
+*.dmnd
+*output
+build/
+*.pyd

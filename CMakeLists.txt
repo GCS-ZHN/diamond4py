@@ -1,5 +1,6 @@
-cmake_minimum_required (VERSION 2.6)
-project (DIAMOND)
+cmake_minimum_required (VERSION 2.8.12)
+project (DIAMOND4PY)
+
 include(CheckCXXCompilerFlag)
 
 option(BUILD_STATIC "BUILD_STATIC" OFF)
@@ -11,7 +12,7 @@ option(STRICT_BAND "STRICT_BAND" ON)
 option(LEFTMOST_SEED_FILTER "LEFTMOST_SEED_FILTER" ON)
 option(SEQ_MASK "SEQ_MASK" ON)
 option(DP_STAT "DP_STAT" OFF)
-option(SINGLE_THREADED "SINGLE_THREADED" OFF)
+option(SINGLE_THREADED "SINGLE_THREADED" OFF) 
 option(EIGEN_BLAS "EIGEN_BLAS" OFF)
 option(WITH_ZSTD "WITH_ZSTD" OFF)
 option(KEEP_TARGET_ID "KEEP_TARGET_ID" OFF)
@@ -162,7 +163,12 @@ endif()
 
 add_library(arch_generic OBJECT ${DISPATCH_OBJECTS})
 target_compile_options(arch_generic PUBLIC -DDISPATCH_ARCH=ARCH_GENERIC -DARCH_ID=0 -DEigen=Eigen_GENERIC)
+if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+  target_compile_options(arch_generic PUBLIC -fPIC)
+endif()
 target_include_directories(arch_generic PRIVATE "${CMAKE_SOURCE_DIR}/src/lib")
+
+# libs for accelerate computation on x86
 if(X86)
   add_library(arch_sse4_1 OBJECT ${DISPATCH_OBJECTS})
   target_include_directories(arch_sse4_1 PRIVATE "${CMAKE_SOURCE_DIR}/src/lib")
@@ -179,15 +185,16 @@ if(X86)
       target_compile_options(arch_avx512 PUBLIC -DDISPATCH_ARCH=ARCH_AVX512 -DARCH_ID=3 /arch:AVX512 -D__SSSE3__ -D__SSE4_1__ -D__POPCNT__ -DEigen=Eigen_AVX512)
     endif()
   else()
-    target_compile_options(arch_sse4_1 PUBLIC -DDISPATCH_ARCH=ARCH_SSE4_1 -DARCH_ID=1 -mssse3 -mpopcnt -msse4.1 -DEigen=Eigen_SSE4_1)
-    target_compile_options(arch_avx2 PUBLIC -DDISPATCH_ARCH=ARCH_AVX2 -DARCH_ID=2 -mssse3 -mpopcnt -msse4.1 -msse4.2 -mavx -mavx2 -DEigen=Eigen_AVX2)
+    target_compile_options(arch_sse4_1 PUBLIC -DDISPATCH_ARCH=ARCH_SSE4_1 -DARCH_ID=1 -mssse3 -mpopcnt -msse4.1 -DEigen=Eigen_SSE4_1 -fPIC)
+    target_compile_options(arch_avx2 PUBLIC -DDISPATCH_ARCH=ARCH_AVX2 -DARCH_ID=2 -mssse3 -mpopcnt -msse4.1 -msse4.2 -mavx -mavx2 -DEigen=Eigen_AVX2 -fPIC)
     if(WITH_AVX512)
-      target_compile_options(arch_avx512 PUBLIC -DDISPATCH_ARCH=ARCH_AVX512 -DARCH_ID=3 -mssse3 -mpopcnt -msse4.1 -msse4.2 -mavx -mavx2 -mavx512f -mavx512bw -DEigen=Eigen_AVX512)
+      target_compile_options(arch_avx512 PUBLIC -DDISPATCH_ARCH=ARCH_AVX512 -DARCH_ID=3 -mssse3 -mpopcnt -msse4.1 -msse4.2 -mavx -mavx2 -mavx512f -mavx512bw -DEigen=Eigen_AVX512 -fPIC)
     endif()
   endif()
 endif(X86)
 
 set(OBJECTS
+  src/python/libdiamond.cpp
   src/run/main.cpp
   src/basic/config.cpp
   src/stats/score_matrix.cpp
@@ -418,17 +425,18 @@ endif()
 
 if(X86)
   if(WITH_AVX512)
-    add_executable(diamond $<TARGET_OBJECTS:arch_generic> $<TARGET_OBJECTS:arch_sse4_1> $<TARGET_OBJECTS:arch_avx2> $<TARGET_OBJECTS:arch_avx512> ${OBJECTS} ${BLAST_OBJ} ${ZSTD_OBJ})
+    add_library(libdiamond MODULE $<TARGET_OBJECTS:arch_generic> $<TARGET_OBJECTS:arch_sse4_1> $<TARGET_OBJECTS:arch_avx2> $<TARGET_OBJECTS:arch_avx512> ${OBJECTS} ${BLAST_OBJ} ${ZSTD_OBJ})
   else()
-    add_executable(diamond $<TARGET_OBJECTS:arch_generic> $<TARGET_OBJECTS:arch_sse4_1> $<TARGET_OBJECTS:arch_avx2> ${OBJECTS} ${BLAST_OBJ} ${ZSTD_OBJ})
-  endif()
+    add_library(libdiamond MODULE $<TARGET_OBJECTS:arch_generic> $<TARGET_OBJECTS:arch_sse4_1> $<TARGET_OBJECTS:arch_avx2> ${OBJECTS} ${BLAST_OBJ} ${ZSTD_OBJ})
+  endif() 
 else()
-  add_executable(diamond $<TARGET_OBJECTS:arch_generic> ${OBJECTS} ${BLAST_OBJ} ${ZSTD_OBJ})
+  add_library(libdiamond MODULE $<TARGET_OBJECTS:arch_generic> ${OBJECTS} ${BLAST_OBJ} ${ZSTD_OBJ})
 endif()
 
-target_include_directories(diamond PRIVATE
-        "${ZLIB_INCLUDE_DIR}"
-        "${CMAKE_SOURCE_DIR}/src/lib")
+
+target_include_directories(libdiamond PRIVATE
+  "${ZLIB_INCLUDE_DIR}"
+  "${CMAKE_SOURCE_DIR}/src/lib")
 
 if(BLAST_INCLUDE_DIR)
   function(find_blast_lib var library)
@@ -440,7 +448,7 @@ if(BLAST_INCLUDE_DIR)
   endfunction(find_blast_lib)
   message("BLAST_INCLUDE_DIR: ${BLAST_INCLUDE_DIR}")
   message("BLAST_LIBRARY_DIR: ${BLAST_LIBRARY_DIR}")
-  target_include_directories(diamond PRIVATE "${BLAST_INCLUDE_DIR}")
+  target_include_directories(libdiamond PRIVATE "${BLAST_INCLUDE_DIR}")
   find_blast_lib(SEQDB_LIBRARY seqdb)
   find_blast_lib(BIBLIO_LIBRARY biblio)
   find_blast_lib(BLASTDB_LIBRARY blastdb)
@@ -460,42 +468,45 @@ if(BLAST_INCLUDE_DIR)
   find_blast_lib(XNCBI_LIBRARY xncbi)
   find_blast_lib(XUTIL_LIBRARY xutil)
   find_blast_lib(LMDB_LIBRARY lmdb)
-  target_link_libraries(diamond ${SEQDB_LIBRARY} ${BLASTDB_LIBRARY} ${BLASTDB_FORMAT_LIBRARY} ${GENERAL_LIBRARY}
+  target_link_libraries(libdiamond ${SEQDB_LIBRARY} ${BLASTDB_LIBRARY} ${BLASTDB_FORMAT_LIBRARY} ${GENERAL_LIBRARY}
           ${XOBJUTIL_LIBRARY} ${XOBJMGR_LIBRARY} ${GENOME_COLLECTION_LIBRARY} ${SEQ_LIBRARY} ${SEQCODE_LIBRARY}
           ${SEQSET_LIBRARY} ${SEQUTIL_LIBRARY} ${PUB_LIBRARY} ${MEDLINE_LIBRARY} ${BIBLIO_LIBRARY} ${SUBMIT_LIBRARY}
           ${XSER_LIBRARY} ${XNCBI_LIBRARY} ${XUTIL_LIBRARY} ${LMDB_LIBRARY})
   add_definitions(-DWITH_BLASTDB)
-  set_target_properties(diamond PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+  set_target_properties(libdiamond PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
     find_library(DBGHELP_LIBRARY Dbghelp)
-    target_link_libraries(diamond ${DBGHELP_LIBRARY})
+    target_link_libraries(libdiamond ${DBGHELP_LIBRARY})
   else()
-    target_link_libraries(diamond ${CMAKE_DL_LIBS})
+    target_link_libraries(libdiamond ${CMAKE_DL_LIBS})
   endif()
 endif()
 
 if(EIGEN_BLAS)
   add_definitions(-DEIGEN_USE_BLAS -DEIGEN_USE_LAPACKE)
   find_package(LAPACKE)
-  target_include_directories(diamond PRIVATE "${LAPACKE_INCLUDE_DIR}")
-  target_link_libraries(diamond "${LAPACKE_LIBRARIES_DEP}")
+  target_include_directories(libdiamond PRIVATE "${LAPACKE_INCLUDE_DIR}")
+  target_link_libraries(libdiamond "${LAPACKE_LIBRARIES_DEP}")
 endif()
 
 if(WITH_ZSTD OR BLAST_INCLUDE_DIR)
   find_path(${ZSTD_INCLUDE_DIR} NAMES zstd.h PATHS ${ZSTD_INCLUDE_DIR})
   find_library(ZSTD_LIBRARY NAMES libzstd.a libzstd_static)
-  target_include_directories(diamond PRIVATE "${ZSTD_INCLUDE_DIR}")
-  target_link_libraries(diamond ${ZSTD_LIBRARY})
+  target_include_directories(libdiamond PRIVATE "${ZSTD_INCLUDE_DIR}")
+  target_link_libraries(libdiamond ${ZSTD_LIBRARY})
   add_definitions(-DWITH_ZSTD)
 endif()
 
 if(WITH_MIMALLOC)
   find_package(mimalloc 2.0 REQUIRED)
   add_definitions(-DWITH_MIMALLOC)
-  target_link_libraries(diamond mimalloc)
-  target_include_directories(diamond PRIVATE ${MIMALLOC_INCLUDE_DIR})
+  target_link_libraries(libdiamond mimalloc)
+  target_include_directories(libdiamond PRIVATE ${MIMALLOC_INCLUDE_DIR})
 endif()
 
-target_link_libraries(diamond ${ZLIB_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(libdiamond ${ZLIB_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 
-install(TARGETS diamond DESTINATION bin)
+# compile by scikit-build
+find_package(PythonExtensions REQUIRED)
+python_extension_module(libdiamond)
+install(TARGETS libdiamond LIBRARY DESTINATION diamond4py)

@@ -1,0 +1,7 @@
+include CMakeLists.txt
+include FindLAPACKE.cmake
+include FindLAPACKEXT.cmake
+recursive-include src *
+recursive-exclude _skbuild *
+exclude src/ChangeLog
+exclude test/*

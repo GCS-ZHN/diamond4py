@@ -706,6 +706,7 @@ static void master_thread(task_timer &total_timer, Config &options)
 	message_stream << "Total time = " << total_timer.get() << "s" << endl;
 	statistics.print();
 	//print_warnings();
+	// statistics.print();
 }
 
 void run(const shared_ptr<SequenceFile>& db, const shared_ptr<SequenceFile>& query, const shared_ptr<Consumer>& out, const shared_ptr<BitVector>& db_filter)
