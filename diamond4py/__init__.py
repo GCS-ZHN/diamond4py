@@ -2,7 +2,8 @@
 A python wrapper module of diamond
 """
 
-from typing import Any
+from enum import Enum
+from typing import Any, Union
 from .libdiamond import main, version
 import os
 import functools
@@ -69,6 +70,22 @@ def not_null(func):
     return wrapper_func
 
 
+class Sensitivity(Enum):
+    FAST = 0
+    MID_SENSITIVE = 1
+    DEFAULT = 2
+    SENSITIVE = 3
+    MORE_SENSITIVE = 4
+    VERY_SENSITIVE = 5
+    ULTRA_SENSITIVE = 6
+
+    def get_cmd_option(self):
+        if self == Sensitivity.DEFAULT:
+            return None
+        else:
+            return "--" + self.name.lower().replace("_", "-")
+
+
 class Diamond(object):
     """
     Diamond python wrapper object
@@ -76,12 +93,20 @@ class Diamond(object):
 
     @not_null
     def __init__(self, database: str, n_threads: int = 1,
-                 quiet: bool = False, log: bool = False) -> None:
+                 quiet: bool = False, log: bool = False, 
+                 sensitivity: Union[Sensitivity, int] = 2) -> None:
 
         self.database = database
         self.n_threads = n_threads
         self.quiet = quiet
         self.log = log
+        try:
+            if isinstance(sensitivity, int):
+                sensitivity = Sensitivity(sensitivity)
+        except ValueError:
+            raise ValueError(
+                f"Invalid sensitivity value: {sensitivity}, should be one of 0~6.")
+        self.sensitivity = sensitivity
 
     @_require_db
     @not_null
@@ -154,6 +179,8 @@ class Diamond(object):
             new_args.append("--quiet")
         if self.log:
             new_args.append("--log")
+        if self.sensitivity != Sensitivity.DEFAULT:
+            new_args.append(self.sensitivity.get_cmd_option())
         return new_args
 
     def _check_db(self) -> bool:
