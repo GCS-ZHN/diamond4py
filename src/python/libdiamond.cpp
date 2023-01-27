@@ -1,5 +1,7 @@
 #include <Python.h>
+#include <stdexcept>
 #include "../run/main.h"
+#include "../basic/const.h"
 
 /**
  * Run diamond by cmd options
@@ -18,7 +20,7 @@ static PyObject* method_main(PyObject* self, PyObject* args)
                 return NULL;
             }
         }
-        int status = diamond(argc, argv);
+        int status = main(argc, argv);
         delete[] argv;
         return Py_BuildValue("i", status);
 	}
