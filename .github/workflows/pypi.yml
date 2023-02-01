@@ -82,13 +82,12 @@ jobs:
           retention-days: 1
 
 
-  other-build:
-    runs-on: ${{ matrix.os }}
+  win-build:
+    runs-on: windows-2022
     needs: ["source-build"]
     strategy: 
       matrix:
         py_version: ['3.7', '3.8', '3.9', '3.10']
-        os: ['macos-latest', 'windows-latest']
 
     steps:
       - uses: actions/checkout@v3
@@ -101,22 +100,9 @@ jobs:
            activate-environment: "diamond4py"
 
       - name: Setup MSBuild.exe
-        if: startsWith(matrix.os, 'windows')
         uses: microsoft/setup-msbuild@v1.1
 
-      - name: "Build and test for macOS"
-        if: startsWith(matrix.os, 'macos')
-        shell: bash -el {0}
-        run: |
-          pip install --upgrade pip &&
-          pip install build &&
-          conda install -c anaconda zlib &&
-          python -m build --wheel &&
-          pip install dist/diamond4py*whl &&
-          pushd test; python test.py; popd
-
       - name: "Build and test for Windows"
-        if: startsWith(matrix.os, 'windows')
         shell: powershell
         run: |
           pip install --upgrade pip;
@@ -141,7 +127,7 @@ jobs:
           retention-days: 1
 
   release:
-    needs: ["manylinux-build", "other-build"]
+    needs: ["manylinux-build", "win-build"]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v3
