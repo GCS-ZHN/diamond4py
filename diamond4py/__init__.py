@@ -2,7 +2,8 @@
 A python wrapper module of diamond
 """
 
-from typing import Any
+from enum import Enum
+from typing import Any, Union
 from .libdiamond import main, version
 import os
 import functools
@@ -69,23 +70,72 @@ def not_null(func):
     return wrapper_func
 
 
+class OutFormat(Enum):
+    """
+    Output format of blast alignment.
+    """
+    BLAST_PAIRWISE = 0
+    BLAST_XML = 5
+    BLAST_TABULAR = 6
+    DAA = 100
+    SAM = 101
+
+
+class Sensitivity(Enum):
+    """
+    Sensitivity of blast alignment.
+    """
+    FAST = 0
+    MID_SENSITIVE = 1
+    DEFAULT = 2
+    SENSITIVE = 3
+    MORE_SENSITIVE = 4
+    VERY_SENSITIVE = 5
+    ULTRA_SENSITIVE = 6
+
+    def get_cmd_option(self):
+        if self != Sensitivity.DEFAULT:
+            return "--" + self.name.lower().replace("_", "-")
+
+
 class Diamond(object):
     """
     Diamond python wrapper object
+
+    Parameters:
+    ------------
+    database: str
+        the database file, the input of other methods
+        and the output of `makedb` method.
+    n_threads: int
+        number of threads to use
+    quiet: bool
+        do not print progress information
+    log: bool
+        log progress information to file
+    header: bool
+        print header line in output
     """
 
     @not_null
     def __init__(self, database: str, n_threads: int = 1,
-                 quiet: bool = False, log: bool = False) -> None:
+                 quiet: bool = False, log: bool = False, header: bool = False) -> None:
 
-        self.database = database
-        self.n_threads = n_threads
-        self.quiet = quiet
-        self.log = log
+        self._value_options = {
+            "db": database,
+            "threads": n_threads
+        }
+        self._flag_options = {
+            "quiet": quiet,
+            "log": log,
+            "header": header
+        }
 
     @_require_db
     @not_null
-    def blastp(self, query: str, out: str) -> int:
+    def blastp(self, query: str, out: str,
+               outfmt: Union[int,OutFormat] = OutFormat.BLAST_TABULAR,
+               sensitivity: Union[Sensitivity, int] = 2) -> int:
         """
         Sequence alignment for proteins by diamond.
 
@@ -95,10 +145,23 @@ class Diamond(object):
             the database file
         query: str
             the input fasta query file
+        outfmt: Union[int,OutFormat]
+            output format, default is 6, which is tabular format.
+        sensitivity: Union[Sensitivity, int]
+            sensitivity of blast alignment, default is 2, which is
+            the default sensitivity of diamond.
 
         """
+        if isinstance(outfmt, int):
+            outfmt = OutFormat(outfmt)
+        if isinstance(sensitivity, int):
+            sensitivity = Sensitivity(sensitivity)
         args = self._add_general_options(
-            "blastp", "--query", query, "--out", out)
+            "blastp",
+            sensitivity.get_cmd_option(),
+            query=query, 
+            out=out,
+            outfmt=outfmt.value)
         return main(*args)
 
     @_require_db
@@ -142,22 +205,21 @@ class Diamond(object):
         return main(*args)
 
     def _add_general_options(self, *args, **kwargs) -> list:
-        new_args = list(args)
-        kwargs["db"] = self.database
-        kwargs["threads"] = str(self.n_threads)
+        new_args = list(filter(lambda s: isinstance(s, str) and len(s) > 0, args))
+        kwargs.update(self._value_options)
         for k, v in kwargs.items():
             if v:
                 new_args.append(f"--{k}")
-                new_args.append(v)
+                new_args.append(str(v))
 
-        if self.quiet:
-            new_args.append("--quiet")
-        if self.log:
-            new_args.append("--log")
+        for k, v in self._flag_options.items():
+            if v:
+                new_args.append(f"--{k}")
+
         return new_args
 
     def _check_db(self) -> bool:
-        return os.path.exists(self.database)
+        return os.path.exists(self._value_options["db"])
 
     @property
     def version(self) -> str:
