@@ -4,6 +4,7 @@
 ![python](https://img.shields.io/badge/python->=3.7-success.svg)
 
 This is python binding for [diamond](https://github.com/bbuchfink/diamond)--a sequence alignment BLAST software implements in C++.
+Current base version is [diamond v2.1.0](https://github.com/bbuchfink/diamond/releases/tag/v2.1.0).
 
 ## install
 
