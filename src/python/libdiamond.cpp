@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include "../run/main.h"
 #include "../basic/const.h"
+#include "../util/io/exceptions.h"
 
 /**
  * Run diamond by cmd options
@@ -27,7 +28,28 @@ static PyObject* method_main(PyObject* self, PyObject* args)
 	catch(const std::bad_alloc &e) {
         PyErr_SetString(PyExc_MemoryError, e.what());
         return NULL;
-	} catch(const std::exception& e) {
+    }
+    catch (const FileOpenException& e) {
+        PyErr_SetString(PyExc_OSError, e.what());
+        return NULL;
+	}
+    catch (const File_read_exception& e) {
+        PyErr_SetString(PyExc_OSError, e.what());
+        return NULL;
+    }
+    catch (const File_write_exception& e) {
+        PyErr_SetString(PyExc_OSError, e.what());
+        return NULL;
+    }
+    catch (const EndOfStream& e) {
+        PyErr_SetString(PyExc_EOFError, e.what());
+        return NULL;
+    }
+    catch (const StreamReadException& e) {
+        PyErr_SetString(PyExc_OSError, e.what());
+        return NULL;
+    }
+    catch(const std::exception& e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
     }

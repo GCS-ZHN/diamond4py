@@ -3,7 +3,7 @@ DIAMOND protein aligner
 Copyright (C) 2013-2022 Max Planck Society for the Advancement of Science e.V.
                         Benjamin Buchfink
                         Eberhard Karls Universitaet Tuebingen
-						
+                        
 Code developed by Benjamin Buchfink <benjamin.buchfink@tue.mpg.de>
 
 This program is free software: you can redistribute it and/or modify
@@ -88,171 +88,152 @@ namespace Incremental {
 
 int main(int ac, const char* av[])
 {
-	try {
-		CommandLineParser parser;
-		config = Config(ac, av, true, parser);
+    CommandLineParser parser;
+    config = Config(ac, av, true, parser);
 
 
-		switch (config.command) {
-		case Config::help:
-			break;
-		case Config::version:
-			cout << Const::program_name << " version " << Const::version_string << endl;
-			break;
-		case Config::makedb:
-			DatabaseFile::make_db();
-			break;
-		case Config::blastp:
-		case Config::blastx:
-			Search::run();
-			break;
-		case Config::view:
-			if (!config.daa_file.empty())
-				view_daa();
+    switch (config.command) {
+    case Config::help:
+        break;
+    case Config::version:
+        cout << Const::program_name << " version " << Const::version_string << endl;
+        break;
+    case Config::makedb:
+        DatabaseFile::make_db();
+        break;
+    case Config::blastp:
+    case Config::blastx:
+        Search::run();
+        break;
+    case Config::view:
+        if (!config.daa_file.empty())
+            view_daa();
 #ifdef EXTRA
-			else if (!config.input_ref_file.empty())
-				view_tsv();
+        else if (!config.input_ref_file.empty())
+            view_tsv();
 #endif
-			else
-				throw std::runtime_error("The view command requires a DAA (option -a) input file.");
-			break;
-		case Config::getseq:
-			get_seq();
-			break;
-		case Config::random_seqs:
-			random_seqs();
-			break;
-		case Config::mask:
-			run_masker();
-			break;
-		case Config::fastq2fasta:
-			fastq2fasta();
-			break;
-		case Config::dbinfo:
-			db_info();
-			break;
-		case Config::read_sim:
-			read_sim();
-			break;
-		case Config::info:
-			info();
-			break;
-		case Config::smith_waterman:
-			pairwise();
-			break;
-		case Config::cluster:
-		case Config::DEEPCLUST:
-			// Why is cluster_similarity not set at the end of the Config constructor?
-			if(!config.cluster_similarity.empty()){
-				string expression = RecursiveParser::clean_expression(&config.cluster_similarity);
-				RecursiveParser rp(nullptr, expression.c_str());
-				try{
-					rp.evaluate();
-				}
-				catch (const runtime_error& e){
-					message_stream << "Could not evaluate the expression: " << config.cluster_similarity << endl;
-					throw e;
-				}
-			}
-			Workflow::Cluster::ClusterRegistry::get(config.cluster_algo.get("cascaded"))->run();
-			break;
-		case Config::translate:
-			translate();
-			break;
-		case Config::filter_blasttab:
-			filter_blasttab();
-			break;
-		case Config::show_cbs:
-			show_cbs();
-			break;
-		case Config::benchmark:
-			Benchmark::benchmark();
-			break;
-		case Config::split:
-			split();
-			break;
-		case Config::regression_test:
-			return Test::run();
-			break;
-		case Config::reverse_seqs:
-			reverse();
-			break;
-		case Config::roc:
-			roc();
-			break;
-		case Config::rocid:
-			roc_id();
-			break;
-		case Config::makeidx:
-			makeindex();
-			break;
-		case Config::find_shapes:
-			find_shapes();
-			break;
-		case Config::HASH_SEQS:
-			hash_seqs();
-			break;
-		case Config::prep_db:
-			prep_db();
-			break;
-		case Config::composition:
-			composition();
-			break;
-		case Config::JOIN:
-			join();
-			break;
-		case Config::LIST_SEEDS:
-			list_seeds();
-			break;
-		case Config::CLUSTER_REALIGN:
-			Cluster::realign();
-			break;
-		case Config::GREEDY_VERTEX_COVER:
-			greedy_vertex_cover();
-			break;
-		case Config::CLUSTER_REASSIGN:
-			Cluster::reassign();
-			break;
-		case Config::RECLUSTER:
-			Cluster::recluster();
-			break;
+        else
+            throw std::runtime_error("The view command requires a DAA (option -a) input file.");
+        break;
+    case Config::getseq:
+        get_seq();
+        break;
+    case Config::random_seqs:
+        random_seqs();
+        break;
+    case Config::mask:
+        run_masker();
+        break;
+    case Config::fastq2fasta:
+        fastq2fasta();
+        break;
+    case Config::dbinfo:
+        db_info();
+        break;
+    case Config::read_sim:
+        read_sim();
+        break;
+    case Config::info:
+        info();
+        break;
+    case Config::smith_waterman:
+        pairwise();
+        break;
+    case Config::cluster:
+    case Config::DEEPCLUST:
+        // Why is cluster_similarity not set at the end of the Config constructor?
+        if(!config.cluster_similarity.empty()){
+            string expression = RecursiveParser::clean_expression(&config.cluster_similarity);
+            RecursiveParser rp(nullptr, expression.c_str());
+            try{
+                rp.evaluate();
+            }
+            catch (const runtime_error& e){
+                message_stream << "Could not evaluate the expression: " << config.cluster_similarity << endl;
+                throw e;
+            }
+        }
+        Workflow::Cluster::ClusterRegistry::get(config.cluster_algo.get("cascaded"))->run();
+        break;
+    case Config::translate:
+        translate();
+        break;
+    case Config::filter_blasttab:
+        filter_blasttab();
+        break;
+    case Config::show_cbs:
+        show_cbs();
+        break;
+    case Config::benchmark:
+        Benchmark::benchmark();
+        break;
+    case Config::split:
+        split();
+        break;
+    case Config::regression_test:
+        return Test::run();
+        break;
+    case Config::reverse_seqs:
+        reverse();
+        break;
+    case Config::roc:
+        roc();
+        break;
+    case Config::rocid:
+        roc_id();
+        break;
+    case Config::makeidx:
+        makeindex();
+        break;
+    case Config::find_shapes:
+        find_shapes();
+        break;
+    case Config::HASH_SEQS:
+        hash_seqs();
+        break;
+    case Config::prep_db:
+        prep_db();
+        break;
+    case Config::composition:
+        composition();
+        break;
+    case Config::JOIN:
+        join();
+        break;
+    case Config::LIST_SEEDS:
+        list_seeds();
+        break;
+    case Config::CLUSTER_REALIGN:
+        Cluster::realign();
+        break;
+    case Config::GREEDY_VERTEX_COVER:
+        greedy_vertex_cover();
+        break;
+    case Config::CLUSTER_REASSIGN:
+        Cluster::reassign();
+        break;
+    case Config::RECLUSTER:
+        Cluster::recluster();
+        break;
 #ifdef EXTRA
-		case Config::INDEX_FASTA:
-			index_fasta();
-			break;
-        case Config::FETCH_SEQ:
-			fetch_seq();
-			break;
-        case Config::blastn:
-            Search::run();
-            break;
-		case Config::LENGTH_SORT:
-			length_sort();
-			break;
-		case Config::sort:
-			sort();
-			break;
+    case Config::INDEX_FASTA:
+        index_fasta();
+        break;
+    case Config::FETCH_SEQ:
+        fetch_seq();
+        break;
+    case Config::blastn:
+        Search::run();
+        break;
+    case Config::LENGTH_SORT:
+        length_sort();
+        break;
+    case Config::sort:
+        sort();
+        break;
 #endif
-		default:
-			return 1;
-		}
-	}
-	catch (const std::bad_alloc &e) {
-		cerr << "Failed to allocate sufficient memory. Please refer to the manual for instructions on memory usage." << endl;
-		log_stream << "Error: " << e.what() << endl;
-		return 1;
-	}
-	catch (const FileOpenException&) {
-		return 1;
-	} catch(const std::exception& e) {
-        cerr << "Error: " << e.what() << endl;
-        log_stream << "Error: " << e.what() << endl;
+    default:
         return 1;
     }
-    catch(...) {
-        cerr << "Exception of unknown type!" << endl;
-        return 1;
-    }
-
     return 0;
 }
