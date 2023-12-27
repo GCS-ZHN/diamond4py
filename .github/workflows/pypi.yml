@@ -105,10 +105,10 @@ jobs:
       - name: "Build and test for Windows"
         shell: powershell
         run: |
-          pip install --upgrade pip;
-          pip install build ;
+          python -m pip install --upgrade pip;
+          pip install build "setuptools>=42" "scikit-build>=0.13" "cmake>=3.18,<=3.25.2" "ninja" "versioneer[toml]";
           conda install -c anaconda zlib ;
-          python -m build --wheel;
+          python -m build --wheel --no-isolation;
           Get-ChildItem -Path dist -Filter diamond4py*whl | ForEach-Object{ pip install "dist\$_" };
           pushd test; python test.py; popd
 
@@ -128,7 +128,7 @@ jobs:
 
   release:
     needs: ["manylinux-build", "win-build"]
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
