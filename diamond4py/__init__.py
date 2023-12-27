@@ -203,7 +203,7 @@ class Diamond(object):
             outfmt = OutFormat(outfmt)
         if isinstance(sensitivity, int):
             sensitivity = Sensitivity(sensitivity)
-        args = self._add_general_options(
+        args = self._build_options(
             "blastp",
             sensitivity.get_cmd_option(),
             query=query, 
@@ -241,7 +241,7 @@ class Diamond(object):
             outfmt = OutFormat(outfmt)
         if isinstance(sensitivity, int):
             sensitivity = Sensitivity(sensitivity)
-        args = self._add_general_options(
+        args = self._build_options(
             "blastx",
             sensitivity.get_cmd_option(),
             query=query, 
@@ -256,7 +256,7 @@ class Diamond(object):
         """
         Print the information of current database.
         """
-        args = self._add_general_options("dbinfo")
+        args = self._build_options("dbinfo")
         return main(*args)
 
     @not_null
@@ -283,16 +283,37 @@ class Diamond(object):
         taxonnames: str
             Path to the names.dmp file from the NCBI taxonomy. 
         """
-        args = self._add_general_options(
+        args = self._build_options(
             "makedb", "--in", input_seqs_file,
             taxonmap=taxonmap,
             taxonnodes=taxonnodes,
             taxonnames=taxonnames)
         return main(*args)
 
-    def _add_general_options(self, *args, **kwargs) -> list:
+    def _build_options(self, *args, with_global_option: bool=True, **kwargs) -> list:
+        """
+        Internal method to build command options.
+
+        Parameters:
+        ------------
+        args: list[str]
+            positional arguments
+        with_global_option: bool
+            whether to add global options
+        kwargs: dict[str, Any]
+            keyword arguments
+
+        Returns:
+        ------------
+        list[str]
+            command options
+        """
         new_args = list(filter(lambda s: isinstance(s, str) and len(s) > 0, args))
-        kwargs.update(self._value_options)
+        if with_global_option:
+            kwargs.update(self._value_options)
+            for k, v in self._flag_options.items():
+                    if v:
+                        new_args.append(f"--{k}")
         for k, v in kwargs.items():
             if v:
                 new_args.append(f"--{k}")
@@ -300,10 +321,6 @@ class Diamond(object):
                     new_args.extend(map(str, v))
                 else:
                     new_args.append(str(v))
-
-        for k, v in self._flag_options.items():
-            if v:
-                new_args.append(f"--{k}")
 
         return new_args
 
@@ -314,6 +331,29 @@ class Diamond(object):
     def version(self) -> str:
         """Version of diamond"""
         return version()
+
+    def __getattr__(self, name):
+        """
+        Create a subcommand method dynamically.
+        It is used to call diamond subcommands which
+        are not directly supported by this wrapper.
+
+        Note:
+        ------------
+        dynamic method name should be the same as
+        diamond subcommand name. And the global options
+        defined in `__init__` method will not be used
+        in this subcommand because we don't know whether
+        it is required or not.
+        """
+        def wrapper(*args, **kwargs):
+            args = self._build_options(
+                name, *args, with_global_option=False, **kwargs)
+            return main(*args)
+        return wrapper
+
+
+__all__ = ["Diamond", "OutFormat", "Sensitivity"]
 
 from . import _version
 __version__ = _version.get_versions()['version']

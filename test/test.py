@@ -29,4 +29,7 @@ diamond.blastx(
     top=10
 )
 
+diamond.test()
+diamond.help()
+
 print("done")
