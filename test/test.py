@@ -18,6 +18,7 @@ diamond.blastp(
         "qseqid", "qstart",
         "qend", "qlen", "sseqid"
     ),
-    sensitivity=Sensitivity.DEFAULT
+    sensitivity=Sensitivity.DEFAULT,
+    top=5
 )
 print("done")

@@ -40,7 +40,7 @@ def not_null(func):
     @functools.wraps(func)
     def wrapper_func(*args, **kwargs):
         params = inspect.signature(func).parameters
-        name_list = func.__code__.co_varnames
+        name_list = list(params.keys())
 
         def check_annotation(param_name, param_val):
             annotation_type: type = params[param_name].annotation
@@ -58,13 +58,32 @@ def not_null(func):
                 raise ValueError(
                     f"Parameter '{param_name}' requires be an instance of {annotation_type}")
 
+        has_var_args = False
+        has_var_kwargs = False
+        for param in params.values():
+            if param.kind == inspect.Parameter.VAR_POSITIONAL and not has_var_args:
+                has_var_args = True
+            elif param.kind == inspect.Parameter.VAR_KEYWORD and not has_var_kwargs:
+                has_var_kwargs = True
+
         # check position params
         for i, param_val in enumerate(args):
-            param_name = name_list[i]
+            if i < (len(name_list) - int(has_var_args) - int(has_var_kwargs)):
+                param_name = name_list[i]
+            elif has_var_args:
+                break
+            else:
+                raise ValueError(
+                    f"Positional parameter '{param_val}' at position {i} is not allowed for {func}")
             check_annotation(param_name, param_val)
 
         # check keyword params
         for param_name, param_val in kwargs.items():
+            if param_name not in name_list:
+                if not has_var_kwargs:
+                    raise ValueError(
+                        f"Keyword parameter name '{param_name}' is not allowed for {func}")
+                continue
             check_annotation(param_name, param_val)
         return func(*args, **kwargs)
     return wrapper_func
@@ -159,7 +178,8 @@ class Diamond(object):
     @not_null
     def blastp(self, query: str, out: str,
                outfmt: Union[int,OutFormat] = OutFormat.BLAST_TABULAR,
-               sensitivity: Union[Sensitivity, int] = 2) -> int:
+               sensitivity: Union[Sensitivity, int] = 2,
+               **kwargs) -> int:
         """
         Sequence alignment for proteins by diamond.
 
@@ -185,7 +205,8 @@ class Diamond(object):
             sensitivity.get_cmd_option(),
             query=query, 
             out=out,
-            outfmt=outfmt.value)
+            outfmt=outfmt.value,
+            **kwargs)
         return main(*args)
 
     @_require_db
