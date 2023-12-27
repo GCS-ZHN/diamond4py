@@ -80,6 +80,30 @@ class OutFormat(Enum):
     DAA = 100
     SAM = 101
 
+    def with_extra_option(self, *args: str) -> "OutFormat":
+        """
+        Add extra options to current output format.
+        """
+        if self == OutFormat.BLAST_TABULAR:
+            self._extra_options = args
+        return self
+    
+    def reset(self) -> "OutFormat":
+        """
+        Reset extra options.
+        """
+        if hasattr(self, "_extra_options"):
+            del self._extra_options
+        return self
+
+    @property
+    def value(self):
+        if hasattr(self, "_extra_options"):
+            options = [super().value]
+            options.extend(self._extra_options)
+            return options
+        return super().value
+
 
 class Sensitivity(Enum):
     """
@@ -210,7 +234,10 @@ class Diamond(object):
         for k, v in kwargs.items():
             if v:
                 new_args.append(f"--{k}")
-                new_args.append(str(v))
+                if isinstance(v, (list, tuple)):
+                    new_args.extend(map(str, v))
+                else:
+                    new_args.append(str(v))
 
         for k, v in self._flag_options.items():
             if v:

@@ -4,6 +4,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 diamond = Diamond(
     database="cafa4.dmnd",
     n_threads=4,
+    header=True,
 )
 # diamond version, see: https://github.com/bbuchfink/diamond/releases
 print(diamond.version)
@@ -13,7 +14,10 @@ diamond.dbinfo()
 diamond.blastp(
     query="test_proteins.fasta",
     out="test_blastp_output",
-    outfmt=OutFormat.BLAST_TABULAR,
-    sensitivity=Sensitivity.DEFAULT,
+    outfmt=OutFormat.BLAST_TABULAR.with_extra_option(
+        "qseqid", "qstart",
+        "qend", "qlen", "sseqid"
+    ),
+    sensitivity=Sensitivity.DEFAULT
 )
 print("done")
