@@ -21,4 +21,12 @@ diamond.blastp(
     sensitivity=Sensitivity.DEFAULT,
     top=5
 )
+
+diamond.blastx(
+    query="test_dna.fasta",
+    out="test_blastx_output",
+    outfmt=OutFormat.BLAST_TABULAR.reset().value,
+    top=10
+)
+
 print("done")

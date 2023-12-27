@@ -194,7 +194,10 @@ class Diamond(object):
         sensitivity: Union[Sensitivity, int]
             sensitivity of blast alignment, default is 2, which is
             the default sensitivity of diamond.
-
+        kwargs: dict[str, Any]
+            extra options not included in this wrapper.
+            see all options by `diamond help` if you install
+            original diamond cli.
         """
         if isinstance(outfmt, int):
             outfmt = OutFormat(outfmt)
@@ -202,6 +205,44 @@ class Diamond(object):
             sensitivity = Sensitivity(sensitivity)
         args = self._add_general_options(
             "blastp",
+            sensitivity.get_cmd_option(),
+            query=query, 
+            out=out,
+            outfmt=outfmt.value,
+            **kwargs)
+        return main(*args)
+
+    @_require_db
+    @not_null
+    def blastx(self, query: str, out: str,
+               outfmt: Union[int,OutFormat] = OutFormat.BLAST_TABULAR,
+               sensitivity: Union[Sensitivity, int] = 2,
+               **kwargs) -> int:
+        """
+        Align translated DNA query sequences against a protein reference database.
+
+        Parameters:
+        ------------
+        db: str
+            the database file
+        query: str
+            the input fasta query file
+        outfmt: Union[int,OutFormat]
+            output format, default is 6, which is tabular format.
+        sensitivity: Union[Sensitivity, int]
+            sensitivity of blast alignment, default is 2, which is
+            the default sensitivity of diamond.
+        kwargs: dict[str, Any]
+            extra options not included in this wrapper.
+            see all options by `diamond help` if you install
+            original diamond cli.
+        """
+        if isinstance(outfmt, int):
+            outfmt = OutFormat(outfmt)
+        if isinstance(sensitivity, int):
+            sensitivity = Sensitivity(sensitivity)
+        args = self._add_general_options(
+            "blastx",
             sensitivity.get_cmd_option(),
             query=query, 
             out=out,
