@@ -313,10 +313,10 @@ class Diamond(object):
             kwargs.update(self._value_options)
             for k, v in self._flag_options.items():
                     if v:
-                        new_args.append(f"--{k}")
+                        new_args.append(f"--{k.replace('_', '-')}")
         for k, v in kwargs.items():
             if v:
-                new_args.append(f"--{k}")
+                new_args.append(f"--{k.replace('_', '-')}")
                 if isinstance(v, (list, tuple)):
                     new_args.extend(map(str, v))
                 else:
