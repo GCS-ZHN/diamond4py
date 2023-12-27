@@ -19,14 +19,15 @@ diamond.blastp(
         "qend", "qlen", "sseqid"
     ),
     sensitivity=Sensitivity.DEFAULT,
-    top=5
+    top=5,
+    block_size=2.0
 )
 
 diamond.blastx(
     query="test_dna.fasta",
     out="test_blastx_output",
     outfmt=OutFormat.BLAST_TABULAR.reset().value,
-    top=10
+    max_target_seqs=10
 )
 
 diamond.test()
