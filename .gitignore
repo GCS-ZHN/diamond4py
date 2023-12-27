@@ -67,3 +67,4 @@ dist
 *output
 build/
 *.pyd
+.conda
